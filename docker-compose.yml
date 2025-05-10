@@ -13,6 +13,7 @@ services:
     restart: always
     volumes:
       - ./scripts:/scripts
+      - ./data:/dataInput
       - mongodb_cluster_router01_db:/data/db
       - mongodb_cluster_router01_config:/data/configdb
   router02:

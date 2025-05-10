@@ -2,25 +2,40 @@
 
 echo "Waiting for the launch of MongoDB services..."
 
-/scripts/wait-for-it.sh configsvr01:27017 -- echo "configsvr01 is ready"
-/scripts/wait-for-it.sh shard01-a:27017 -- echo "shard01-a is ready"
-/scripts/wait-for-it.sh shard02-a:27017 -- echo "shard02-a is ready"
-/scripts/wait-for-it.sh shard03-a:27017 -- echo "shard03-a is ready"
-/scripts/wait-for-it.sh router01:27017 -- echo "router01 is ready"
+sudo chown -R user:user /home/user/mongoDB
+
+sleep 5
+
+chmod +x scripts/dataimport.sh
+chmod +x scripts/init-configserver.js
+chmod +x scripts/init-shard01.js
+chmod +x scripts/init-shard02.js
+chmod +x scripts/init-shard03.js
+chmod +x scripts/init-router.js
+chmod +x scripts/auth.js
+
+curl -fsSL https://downloads.mongodb.com/compass/mongosh-1.8.0-linux-x64.tgz -o mongosh.tgz
+tar -xvzf mongosh.tgz
+mv mongosh-1.8.0-linux-x64/bin/mongosh /usr/local/bin/mongosh
+
+sleep 20
 
 echo "Initializing MongoDB cluster components..."
 
-mongosh mongodb://configsvr01:27017 /scripts/init-configserver.js
-mongosh mongodb://shard01-a:27017 /scripts/init-shard01.js
-mongosh mongodb://shard02-a:27017 /scripts/init-shard02.js
-mongosh mongodb://shard03-a:27017 /scripts/init-shard03.js
-mongosh mongodb://router01:27017 /scripts/init-router.js
+docker-compose exec configsvr01 bash "/scripts/init-configserver.js"
+docker-compose exec shard01-a bash "/scripts/init-shard01.js"
+docker-compose exec shard02-a bash "/scripts/init-shard02.js"
+docker-compose exec shard03-a bash "/scripts/init-shard03.js"
 
-echo "Setting up authentication..."
+sleep 10
 
-mongosh mongodb://configsvr01:27017 /scripts/auth.js
-mongosh mongodb://shard01-a:27017 /scripts/auth.js
-mongosh mongodb://shard02-a:27017 /scripts/auth.js
-mongosh mongodb://shard03-a:27017 /scripts/auth.js
+docker-compose exec router01 sh -c "mongosh < /scripts/init-router.js"
 
-echo "Done."
+docker-compose exec configsvr01 bash "/scripts/auth.js"
+docker-compose exec shard01-a bash "/scripts/auth.js"
+docker-compose exec shard02-a bash "/scripts/auth.js"
+docker-compose exec shard03-a bash "/scripts/auth.js"
+
+sleep 5
+echo "Running data import script..."
+scripts/dataimport.sh

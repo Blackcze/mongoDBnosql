@@ -12,6 +12,10 @@ sh.shardCollection(\"MyDatabase.OdhadovanaCenaOdchylky\",{ date : 'hashed' });
 
 "
 
+scripts/set_validators.sh
+
+echo "Data import in progress"
+
 # Složka s JSON soubory
 JSON_DIR="/home/user/mongoDB/data"
 
